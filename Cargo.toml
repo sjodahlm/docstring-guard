@@ -1,0 +1,8 @@
+[package]
+name = "pre-commit-pydocstring"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+anyhow = "1.0.102"
+rustpython-parser = "=0.4.0"
