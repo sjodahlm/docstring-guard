@@ -60,6 +60,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "docstring-guard"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "rustpython-parser",
+]
+
+[[package]]
 name = "either"
 version = "1.15.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -284,14 +292,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "85eae3c4ed2f50dcfe72643da4befc30deadb458a9b590d720cde2f2b1e97da9"
 dependencies = [
  "zerocopy",
-]
-
-[[package]]
-name = "pre-commit-pydocstring"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "rustpython-parser",
 ]
 
 [[package]]

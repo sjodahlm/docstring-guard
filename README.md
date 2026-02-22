@@ -1,10 +1,10 @@
-# pre-commit-pydocstring
+# docstring-guard
 
 A git pre-commit hook that checks staged Python files for missing docstrings on functions and classes.
 
 ## Architecture
 
-- **Rust binary** (`docstring-checker`) performs AST analysis on Python source files
+- **Rust binary** (`docstring-guard`) performs AST analysis on Python source files
 
 ## Status
 
