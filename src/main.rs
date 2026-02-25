@@ -1,33 +1,47 @@
 use std::env;
 use std::process::exit;
 
-use crate::checker::check_file_for_docstrings;
+use anyhow::Error;
+
+use crate::checker::{MissingDocstring, check_file_for_docstrings};
 mod checker;
 
 fn main() {
     let args: Vec<String> = env::args().skip(1).collect();
     if args.is_empty() {
-        println!("no file provided");
+        println!("no *.py file provided");
+        println!("skipping docstring check...");
         exit(0);
     }
 
+    let mut docstring_errors: Vec<MissingDocstring> = vec![];
+    let mut errors: Vec<Error> = vec![];
     for argv in args {
         match check_file_for_docstrings(argv) {
             Ok(missing_docstrings) => {
-                for missing_docstring in missing_docstrings.iter() {
-                    println!(
-                        "#{}, {}, {}",
-                        missing_docstring.file_name,
-                        missing_docstring.name,
-                        missing_docstring.line_number
-                    );
-                }
+                docstring_errors.extend(missing_docstrings);
             }
             Err(err) => {
-                eprintln!("Error: {err}");
-                eprintln!("Caused by: {}", err.root_cause());
-                exit(1);
+                errors.push(err);
             }
         }
     }
+
+    for err in errors.iter() {
+        eprintln!("Error: {err}");
+        eprintln!("Caused by: {}", err.root_cause());
+    }
+
+    for missing_docstring in docstring_errors.iter() {
+        println!(
+            "no docstring in function: '{}' in file: '{}' on line: {}",
+            missing_docstring.name, missing_docstring.file_name, missing_docstring.line_number
+        );
+    }
+
+    if !errors.is_empty() || !docstring_errors.is_empty() {
+        exit(1)
+    }
+
+    exit(0)
 }
