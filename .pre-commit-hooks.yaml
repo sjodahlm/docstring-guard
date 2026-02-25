@@ -1,0 +1,7 @@
+- id: docstring-guard
+  name: check missing docstrings
+  description: checks for missing __doc__ in *.py
+  entry: docstring-guard
+  language: rust
+  types: [python]
+  pass_filenames: true
