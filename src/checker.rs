@@ -1,8 +1,43 @@
 use colored::Colorize;
 
 use anyhow::{Context, Result};
-use rustpython_parser::{Mode, ast::Stmt, parse, text_size::TextRange};
+use rustpython_parser::{
+    Mode,
+    ast::{Identifier, Stmt, StmtClassDef, StmtFunctionDef},
+    parse,
+    text_size::TextRange,
+};
 use std::{fs, path::Path};
+
+trait Documentable {
+    fn body(&self) -> &[Stmt];
+    fn name(&self) -> &Identifier;
+    fn range(&self) -> TextRange;
+}
+
+impl Documentable for StmtFunctionDef {
+    fn body(&self) -> &[Stmt] {
+        &self.body
+    }
+    fn name(&self) -> &Identifier {
+        &self.name
+    }
+    fn range(&self) -> TextRange {
+        self.range
+    }
+}
+
+impl Documentable for StmtClassDef {
+    fn body(&self) -> &[Stmt] {
+        &self.body
+    }
+    fn name(&self) -> &Identifier {
+        &self.name
+    }
+    fn range(&self) -> TextRange {
+        self.range
+    }
+}
 
 pub struct MissingDocstring {
     pub file_name: String,
@@ -14,8 +49,8 @@ fn load_file_content(path: impl AsRef<Path>) -> Result<String> {
     fs::read_to_string(path.as_ref()).with_context(|| {
         format!(
             "{} {} failed to read",
+            "error:".red(),
             format!("{}:", path.as_ref().display()).bold(),
-            "error:".red()
         )
     })
 }
@@ -32,6 +67,50 @@ fn is_docstring(stmt: &Stmt) -> bool {
         .map_or(false, |c| c.value.is_str())
 }
 
+fn check_body_for_docstrings(path: &Path, content: &str, stmts: &[Stmt]) -> Vec<MissingDocstring> {
+    let mut missing_docstrings: Vec<MissingDocstring> = vec![];
+
+    for stmt in stmts.iter() {
+        let entry: Option<MissingDocstring> = if let Some(s) = stmt.as_function_def_stmt() {
+            check_body_for_docstring(path, s, content)
+        } else if let Some(s) = stmt.as_class_def_stmt() {
+            if let Some(missing) = check_body_for_docstring(path, s, content) {
+                missing_docstrings.push(missing);
+            }
+            missing_docstrings.extend(check_body_for_docstrings(path, content, s.body()));
+            continue;
+        } else {
+            None
+        };
+
+        if let Some(e) = entry {
+            missing_docstrings.push(e);
+        }
+    }
+    missing_docstrings
+}
+
+fn check_body_for_docstring(
+    path: &Path,
+    stmt: &impl Documentable,
+    content: &str,
+) -> Option<MissingDocstring> {
+    let range = stmt.range();
+    let id = stmt.name().as_str();
+
+    if let Some(docstring) = stmt.body().first() {
+        if !is_docstring(docstring) {
+            let entry = MissingDocstring {
+                file_name: path.display().to_string(),
+                name: id.to_string(),
+                line_number: get_line_number(content, range),
+            };
+            return Some(entry);
+        }
+    }
+    None
+}
+
 pub fn check_file_for_docstrings(file_path: impl AsRef<Path>) -> Result<Vec<MissingDocstring>> {
     let path = file_path.as_ref();
     let content = load_file_content(path)?;
@@ -39,30 +118,14 @@ pub fn check_file_for_docstrings(file_path: impl AsRef<Path>) -> Result<Vec<Miss
         .with_context(|| {
             format!(
                 "{} {} failed to parse",
+                "error:".red(),
                 format!("{}:", path.display()).bold(),
-                "error:".red()
             )
         })?;
 
     let mut missing_docstrings: Vec<MissingDocstring> = vec![];
     if let Some(module) = &module.as_module() {
-        for stmt in module.body.iter() {
-            if let Some(func_stmt) = &stmt.as_function_def_stmt() {
-                let range = func_stmt.range;
-                let id = func_stmt.name.as_str();
-
-                if let Some(docstring) = &func_stmt.body.first() {
-                    if !is_docstring(docstring) {
-                        let entry = MissingDocstring {
-                            file_name: path.display().to_string(),
-                            name: id.to_string(),
-                            line_number: get_line_number(&content, range),
-                        };
-                        missing_docstrings.push(entry);
-                    }
-                }
-            }
-        }
+        missing_docstrings.extend(check_body_for_docstrings(path, &content, &module.body));
     }
     Ok(missing_docstrings)
 }

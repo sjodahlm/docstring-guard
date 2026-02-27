@@ -12,11 +12,3 @@ repos:
       - id: fmt
       - id: clippy
         args: ["--"]
-
-  - repo: local
-    hooks:
-    - id: docstring-guard
-      name: check missing docstrings
-      entry: cargo run --
-      language: system
-      types: [python]

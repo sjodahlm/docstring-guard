@@ -14,3 +14,7 @@ def docstring_not_first():
 # Checks no docstring
 def no_docstring():
     print("Hello World")
+
+class HelloWorld:
+    def __init__(self):
+        pass
