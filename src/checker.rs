@@ -99,16 +99,29 @@ fn check_body_for_docstring(
     let id = stmt.name().as_str();
 
     if let Some(docstring) = stmt.body().first() {
-        if !is_docstring(docstring) {
+        let line_number = get_line_number(content, range);
+        if !is_docstring(docstring) && !ignore_validation(line_number, content) {
             let entry = MissingDocstring {
                 file_name: path.display().to_string(),
                 name: id.to_string(),
-                line_number: get_line_number(content, range),
+                line_number,
             };
             return Some(entry);
         }
     }
     None
+}
+
+fn remove_whitespace(s: &str) -> String {
+    s.chars().filter(|c| !c.is_whitespace()).collect()
+}
+
+fn ignore_validation(line_number: usize, content: &str) -> bool {
+    let mut lines = content.lines();
+    if let Some(ignore) = lines.nth(line_number - 1) {
+        return remove_whitespace(ignore).contains("#docstring-guard=ignore");
+    }
+    false
 }
 
 pub fn check_file_for_docstrings(file_path: impl AsRef<Path>) -> Result<Vec<MissingDocstring>> {

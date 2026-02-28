@@ -43,8 +43,6 @@ fn main() {
 
     if !errors.is_empty() || !docstring_fails.is_empty() {
         let passed: usize = args.len() - fails.len() - errors.len();
-        println!();
-        // TODO: fix failed files count and passed files in summary
         println!(
             "{} {} violations found in {} {} failed, ({} errors, {} passed)",
             "docstring-guard:".bold(),
