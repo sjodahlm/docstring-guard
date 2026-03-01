@@ -7,14 +7,16 @@ def valid_docstring():
     print("Hello World")
 
 # Checks invalid docstring placement
-def docstring_not_first():
+def docstring_not_first(): #docstring-guard=ignore
     print("Hello World")
     """prints 'Hello World'"""
 
 # Checks no docstring
-def no_docstring():
+def no_docstring(): #docstring-guard=ignore
     print("Hello World")
 
-class HelloWorld:
+class HelloWorld: #docstring-guard=ignore
     def __init__(self):
+        pass
+    def __check(self): #docstring-guard=ignore
         pass

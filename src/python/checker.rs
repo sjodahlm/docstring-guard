@@ -1,13 +1,17 @@
-use colored::Colorize;
-
 use anyhow::{Context, Result};
+use colored::Colorize;
 use rustpython_parser::{
     Mode,
     ast::{Identifier, Stmt, StmtClassDef, StmtFunctionDef},
     parse,
     text_size::TextRange,
 };
-use std::{fs, path::Path};
+use std::path::Path;
+
+use crate::{
+    MissingDocstring,
+    utils::{ignore_validation, load_file_content},
+};
 
 trait Documentable {
     fn body(&self) -> &[Stmt];
@@ -39,32 +43,23 @@ impl Documentable for StmtClassDef {
     }
 }
 
-pub struct MissingDocstring {
-    pub file_name: String,
-    pub name: String,
-    pub line_number: usize,
+fn is_docstring(stmt: &Stmt) -> bool {
+    stmt.as_expr_stmt()
+        .and_then(|e| e.value.as_constant_expr())
+        .map_or(false, |c| c.value.is_str())
 }
 
-fn load_file_content(path: impl AsRef<Path>) -> Result<String> {
-    fs::read_to_string(path.as_ref()).with_context(|| {
-        format!(
-            "{} {} failed to read",
-            "error:".red(),
-            format!("{}:", path.as_ref().display()).bold(),
-        )
-    })
+fn is_dunder(name: &str) -> bool {
+    if name.starts_with("__") && name.ends_with("__") {
+        return true;
+    }
+    false
 }
 
 fn get_line_number(content: &str, range: TextRange) -> usize {
     let start = range.start().to_usize();
     let slice = &content[..start];
     slice.chars().filter(|c| *c == '\n').count() + 1
-}
-
-fn is_docstring(stmt: &Stmt) -> bool {
-    stmt.as_expr_stmt()
-        .and_then(|e| e.value.as_constant_expr())
-        .map_or(false, |c| c.value.is_str())
 }
 
 fn check_body_for_docstrings(path: &Path, content: &str, stmts: &[Stmt]) -> Vec<MissingDocstring> {
@@ -97,10 +92,13 @@ fn check_body_for_docstring(
 ) -> Option<MissingDocstring> {
     let range = stmt.range();
     let id = stmt.name().as_str();
+    let line_number = get_line_number(content, range);
 
-    if let Some(docstring) = stmt.body().first() {
-        let line_number = get_line_number(content, range);
-        if !is_docstring(docstring) && !ignore_validation(line_number, content) {
+    if let Some(docstring) = stmt.body().first()
+        && !is_dunder(id)
+        && !ignore_validation(line_number, content)
+    {
+        if !is_docstring(docstring) {
             let entry = MissingDocstring {
                 file_name: path.display().to_string(),
                 name: id.to_string(),
@@ -112,21 +110,15 @@ fn check_body_for_docstring(
     None
 }
 
-fn remove_whitespace(s: &str) -> String {
-    s.chars().filter(|c| !c.is_whitespace()).collect()
-}
-
-fn ignore_validation(line_number: usize, content: &str) -> bool {
-    let mut lines = content.lines();
-    if let Some(ignore) = lines.nth(line_number - 1) {
-        return remove_whitespace(ignore).contains("#docstring-guard=ignore");
-    }
-    false
-}
-
 pub fn check_file_for_docstrings(file_path: impl AsRef<Path>) -> Result<Vec<MissingDocstring>> {
     let path = file_path.as_ref();
-    let content = load_file_content(path)?;
+    let content = load_file_content(path).with_context(|| {
+        format!(
+            "{} {} failed to read",
+            "error:".red(),
+            format!("{}:", path.display()).bold(),
+        )
+    })?;
     let module: rustpython_parser::ast::Mod = parse(&content, Mode::Module, "<unknown>")
         .with_context(|| {
             format!(
