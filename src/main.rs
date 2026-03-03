@@ -42,7 +42,7 @@ fn main() {
     if !errors.is_empty() || !docstring_fails.is_empty() {
         let passed: usize = args.len() - fails.len() - errors.len();
         println!(
-            "{} {} violations found in {} {} failed, ({} errors, {} passed)",
+            "{} {} violations found in {} {} ({} errors, {} passed)",
             "docstring-guard:".bold(),
             docstring_fails.len(),
             fails.len(),
