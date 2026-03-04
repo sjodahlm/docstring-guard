@@ -1,14 +1,14 @@
 use crate::{
-    MissingDocstring,
     utils::{ignore_validation, load_file_content},
+    MissingDocstring,
 };
 use anyhow::{Context, Result};
 use colored::Colorize;
 use rustpython_parser::{
-    Mode,
     ast::{Identifier, Stmt, StmtClassDef, StmtFunctionDef},
     parse,
     text_size::TextRange,
+    Mode,
 };
 use std::path::Path;
 
@@ -97,17 +97,16 @@ fn check_documentable_for_docstring(
     let id = stmt.name().as_str();
     let line_number = get_line_number(content, range);
 
-    if let Some(docstring) = stmt.body().first()
-        && !is_dunder(id)
-        && !ignore_validation(line_number, content)
-    {
-        if !is_docstring(docstring) {
-            let entry = MissingDocstring {
-                file_name: path.display().to_string(),
-                name: id.to_string(),
-                line_number,
-            };
-            return Some(entry);
+    if !is_dunder(id) && !ignore_validation(line_number, content) {
+        if let Some(docstring) = stmt.body().first() {
+            if !is_docstring(docstring) {
+                let entry = MissingDocstring {
+                    file_name: path.display().to_string(),
+                    name: id.to_string(),
+                    line_number,
+                };
+                return Some(entry);
+            }
         }
     }
     None
@@ -148,35 +147,35 @@ mod tests {
     use rstest::rstest;
 
     #[rstest]
-    #[case("src/python/fixtures/test_valid_docstring.py", vec![])]
-    #[case("src/python/fixtures/test_docstring_guard_ignore.py", vec![])]
-    #[case("src/python/fixtures/test_docstring_not_first.py",
+    #[case("src/python/tests/fixtures/test_valid_docstring.py", vec![])]
+    #[case("src/python/tests/fixtures/test_docstring_guard_ignore.py", vec![])]
+    #[case("src/python/tests/fixtures/test_docstring_not_first.py",
         vec![
             MissingDocstring {
-                file_name:"src/python/fixtures/test_docstring_not_first.py".to_string(),
+                file_name:"src/python/tests/fixtures/test_docstring_not_first.py".to_string(),
                 name:"docstring_not_first".to_string(),
                 line_number:3,
             }
         ]
     )]
-    #[case("src/python/fixtures/test_no_docstring_in_classdef.py",
+    #[case("src/python/tests/fixtures/test_no_docstring_in_classdef.py",
         vec![
             MissingDocstring {
-                    file_name:"src/python/fixtures/test_no_docstring_in_classdef.py".to_string(),
+                    file_name:"src/python/tests/fixtures/test_no_docstring_in_classdef.py".to_string(),
                     name:"HelloWorld".to_string(),
                     line_number:3,
             },
             MissingDocstring {
-                    file_name:"src/python/fixtures/test_no_docstring_in_classdef.py".to_string(),
+                    file_name:"src/python/tests/fixtures/test_no_docstring_in_classdef.py".to_string(),
                     name:"no_docstring".to_string(),
                     line_number:6,
             }
         ]
     )]
-    #[case("src/python/fixtures/test_no_docstring_in_funcdef.py",
+    #[case("src/python/tests/fixtures/test_no_docstring_in_funcdef.py",
         vec![
             MissingDocstring {
-                file_name:"src/python/fixtures/test_no_docstring_in_funcdef.py".to_string(),
+                file_name:"src/python/tests/fixtures/test_no_docstring_in_funcdef.py".to_string(),
                 name:"no_docstring".to_string(),
                 line_number:3,
             }
@@ -190,7 +189,7 @@ mod tests {
     }
 
     #[rstest]
-    #[case("src/python/fixtures/test_fail_to_read.py")]
+    #[case("src/python/tests/fixtures/test_fail_to_read.py")]
     fn test_check_file_for_docstrings_read_errors(#[case] input: impl AsRef<Path>) {
         assert!(check_file_for_docstrings(input).is_err())
     }

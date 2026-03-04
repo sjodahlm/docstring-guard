@@ -1,6 +1,6 @@
 use anyhow::Error;
 use colored::Colorize;
-use docstring_guard::{MissingDocstring, check_file_for_docstrings};
+use docstring_guard::{check_file_for_docstrings, MissingDocstring};
 use std::process::exit;
 use std::{collections::HashSet, env};
 

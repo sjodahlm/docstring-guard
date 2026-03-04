@@ -4,7 +4,7 @@ A git pre-commit hook that checks Python files for missing docstrings on functio
 
 ## Requirements
 
-- Rust and Cargo (installed via [rustup](https://rust-lang.org/tools/install/))
+- Rust 1.83+ (installed via [rustup](https://rust-lang.org/tools/install/))
 
 - [pre-commit](https://pre-commit.com)
 
@@ -22,10 +22,11 @@ Add the following to your `.pre-commit-config.yaml`:
 ```yaml
 repos:
   - repo: https://github.com/sjodahlm/docstring-guard
-    rev: v0.1.0
+    rev: <latest-tag>
     hooks:
       - id: docstring-guard
 ```
+Replace \<latest-tag> with the latest release from the [releases page](https://github.com/sjodahlm/docstring-guard/releases).
 
 Then install the hook:
 ```bash

@@ -1,7 +1,8 @@
 [package]
 name = "docstring-guard"
-version = "0.1.0"
-edition = "2024"
+version = "0.1.1"
+edition = "2021"
+rust-version = "1.83"
 license = "MIT"
 
 [dependencies]
