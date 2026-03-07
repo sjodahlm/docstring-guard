@@ -8,7 +8,9 @@ license = "MIT"
 [dependencies]
 anyhow = "1.0.102"
 colored = "3.1.1"
+proc-macro2 = { version = "1.0.106", features = ["span-locations"] }
 rustpython-parser = "=0.4.0"
+syn = { version = "2.0.117", features = ["full", "visit", "extra-traits"] }
 
 [dev-dependencies]
 rstest = "0.26.1"

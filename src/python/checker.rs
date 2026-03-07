@@ -1,46 +1,14 @@
+use super::documentable::Documentable;
 use crate::{
-    utils::{ignore_validation, load_file_content},
+    utils::{
+        ignore_validation, load_file_content, load_file_error_formating, parse_error_formating,
+    },
     MissingDocstring,
 };
+
 use anyhow::{Context, Result};
-use colored::Colorize;
-use rustpython_parser::{
-    ast::{Identifier, Stmt, StmtClassDef, StmtFunctionDef},
-    parse,
-    text_size::TextRange,
-    Mode,
-};
+use rustpython_parser::{ast::Stmt, parse, text_size::TextRange, Mode};
 use std::path::Path;
-
-trait Documentable {
-    fn body(&self) -> &[Stmt];
-    fn name(&self) -> &Identifier;
-    fn range(&self) -> TextRange;
-}
-
-impl Documentable for StmtFunctionDef {
-    fn body(&self) -> &[Stmt] {
-        &self.body
-    }
-    fn name(&self) -> &Identifier {
-        &self.name
-    }
-    fn range(&self) -> TextRange {
-        self.range
-    }
-}
-
-impl Documentable for StmtClassDef {
-    fn body(&self) -> &[Stmt] {
-        &self.body
-    }
-    fn name(&self) -> &Identifier {
-        &self.name
-    }
-    fn range(&self) -> TextRange {
-        self.range
-    }
-}
 
 fn is_docstring(stmt: &Stmt) -> bool {
     stmt.as_expr_stmt()
@@ -114,21 +82,9 @@ fn check_documentable_for_docstring(
 
 pub fn check_file_for_docstrings(file_path: impl AsRef<Path>) -> Result<Vec<MissingDocstring>> {
     let path = file_path.as_ref();
-    let content = load_file_content(path).with_context(|| {
-        format!(
-            "{} {} failed to read",
-            "error:".red(),
-            format!("{}:", path.display()).bold(),
-        )
-    })?;
-    let module: rustpython_parser::ast::Mod = parse(&content, Mode::Module, "<unknown>")
-        .with_context(|| {
-            format!(
-                "{} {} failed to parse",
-                "error:".red(),
-                format!("{}:", path.display()).bold(),
-            )
-        })?;
+    let content = load_file_content(path).with_context(|| load_file_error_formating(path))?;
+    let module: rustpython_parser::ast::Mod =
+        parse(&content, Mode::Module, "<unknown>").with_context(|| parse_error_formating(path))?;
 
     let mut missing_docstrings: Vec<MissingDocstring> = vec![];
     if let Some(module) = &module.as_module() {

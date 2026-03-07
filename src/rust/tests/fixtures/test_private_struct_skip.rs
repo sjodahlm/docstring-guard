@@ -1,0 +1,3 @@
+struct PrivateStruct {
+    name: String,
+}

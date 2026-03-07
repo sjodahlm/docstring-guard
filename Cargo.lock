@@ -83,8 +83,10 @@ version = "0.1.1"
 dependencies = [
  "anyhow",
  "colored",
+ "proc-macro2",
  "rstest",
  "rustpython-parser",
+ "syn",
 ]
 
 [[package]]

@@ -1,5 +1,7 @@
 pub mod python;
+pub mod rust;
 pub use python::checker::check_file_for_docstrings;
+// pub use rust::checker::run;
 pub mod utils;
 
 #[derive(PartialEq, Debug)]
