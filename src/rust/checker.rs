@@ -1,41 +1,51 @@
 use super::documentable::Documentable;
-use crate::{
-    utils::{load_file_content, load_file_error_formating, parse_error_formating},
-    MissingDocstring,
-};
+use crate::{utils, Language, MissingDocstring};
 
 use anyhow::{Context, Result};
 use std::path::Path;
 use syn::visit::{self, Visit};
 use syn::{ItemFn, ItemStruct, Visibility};
 
-struct DocstringVisitor {
+struct DocstringVisitor<'a> {
     file_name: String,
     missing_docstrings: Vec<MissingDocstring>,
+    file_content: &'a str,
 }
 
-impl<'ast> Visit<'ast> for DocstringVisitor {
+impl<'ast> Visit<'ast> for DocstringVisitor<'_> {
     fn visit_item_fn(&mut self, i: &'ast ItemFn) {
-        if let Some(missing_docstring) = has_docstring(&self.file_name, i) {
-            self.missing_docstrings.push(missing_docstring)
+        if !utils::ignore_validation(
+            Language::Rust,
+            i.sig.ident.span().start().line,
+            self.file_content,
+        ) {
+            if let Some(missing_docstring) = has_docstring(&self.file_name, i) {
+                self.missing_docstrings.push(missing_docstring)
+            }
         }
         visit::visit_item_fn(self, i);
     }
 
     fn visit_item_struct(&mut self, i: &'ast ItemStruct) {
-        if let Some(missing_docstring) = has_docstring(&self.file_name, i) {
-            self.missing_docstrings.push(missing_docstring)
+        if !utils::ignore_validation(
+            Language::Rust,
+            i.ident.span().start().line,
+            self.file_content,
+        ) {
+            if let Some(missing_docstring) = has_docstring(&self.file_name, i) {
+                self.missing_docstrings.push(missing_docstring)
+            }
         }
         visit::visit_item_struct(self, i);
     }
 }
 
-fn has_docstring(file_name: &String, item: &impl Documentable) -> Option<MissingDocstring> {
+fn has_docstring(file_name: &str, item: &impl Documentable) -> Option<MissingDocstring> {
     match item.vis() {
         Visibility::Public(_) => {
             if !item.attrs().iter().any(|attr| attr.path().is_ident("doc")) {
                 let entry = MissingDocstring {
-                    file_name: file_name.clone(),
+                    file_name: file_name.to_owned(),
                     name: item.ident().to_string(),
                     line_number: item.ident().span().start().line,
                 };
@@ -49,13 +59,15 @@ fn has_docstring(file_name: &String, item: &impl Documentable) -> Option<Missing
 
 pub fn check_file_for_docstrings(file_path: impl AsRef<Path>) -> Result<Vec<MissingDocstring>> {
     let path = file_path.as_ref();
-    let content = load_file_content(path).with_context(|| load_file_error_formating(path))?;
+    let content =
+        utils::load_file_content(path).with_context(|| utils::load_file_error_formating(path))?;
 
-    let ast = syn::parse_file(&content).with_context(|| parse_error_formating(path))?;
+    let ast = syn::parse_file(&content).with_context(|| utils::parse_error_formating(path))?;
 
     let mut visitor = DocstringVisitor {
         file_name: path.display().to_string(),
         missing_docstrings: Vec::new(),
+        file_content: &content,
     };
     visitor.visit_file(&ast);
 

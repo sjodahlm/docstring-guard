@@ -1,6 +1,7 @@
 use anyhow::Error;
 use colored::Colorize;
-use docstring_guard::{check_file_for_docstrings, MissingDocstring};
+use docstring_guard::{check_python_file, check_rust_file, MissingDocstring};
+use std::path::Path;
 use std::process::exit;
 use std::{collections::HashSet, env};
 
@@ -11,12 +12,20 @@ fn main() {
     let mut fails: HashSet<String> = HashSet::new();
 
     for argv in &args {
-        match check_file_for_docstrings(argv) {
-            Ok(missing_docstrings) => {
-                docstring_fails.extend(missing_docstrings);
-            }
-            Err(err) => {
-                errors.push(err);
+        let path = Path::new(argv);
+        if let Some(extension) = path.extension() {
+            let result: Result<Vec<MissingDocstring>, Error> = match extension.to_str() {
+                Some("py") => check_python_file(path),
+                Some("rs") => check_rust_file(path),
+                _ => continue,
+            };
+            match result {
+                Ok(missing_docstrings) => {
+                    docstring_fails.extend(missing_docstrings);
+                }
+                Err(err) => {
+                    errors.push(err);
+                }
             }
         }
     }
@@ -52,6 +61,5 @@ fn main() {
         );
         exit(1)
     }
-
     exit(0)
 }

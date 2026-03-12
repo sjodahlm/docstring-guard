@@ -1,10 +1,5 @@
 use super::documentable::Documentable;
-use crate::{
-    utils::{
-        ignore_validation, load_file_content, load_file_error_formating, parse_error_formating,
-    },
-    MissingDocstring,
-};
+use crate::{utils, Language, MissingDocstring};
 
 use anyhow::{Context, Result};
 use rustpython_parser::{ast::Stmt, parse, text_size::TextRange, Mode};
@@ -65,7 +60,7 @@ fn check_documentable_for_docstring(
     let id = stmt.name().as_str();
     let line_number = get_line_number(content, range);
 
-    if !is_dunder(id) && !ignore_validation(line_number, content) {
+    if !is_dunder(id) && !utils::ignore_validation(Language::Python, line_number, content) {
         if let Some(docstring) = stmt.body().first() {
             if !is_docstring(docstring) {
                 let entry = MissingDocstring {
@@ -82,9 +77,10 @@ fn check_documentable_for_docstring(
 
 pub fn check_file_for_docstrings(file_path: impl AsRef<Path>) -> Result<Vec<MissingDocstring>> {
     let path = file_path.as_ref();
-    let content = load_file_content(path).with_context(|| load_file_error_formating(path))?;
-    let module: rustpython_parser::ast::Mod =
-        parse(&content, Mode::Module, "<unknown>").with_context(|| parse_error_formating(path))?;
+    let content =
+        utils::load_file_content(path).with_context(|| utils::load_file_error_formating(path))?;
+    let module: rustpython_parser::ast::Mod = parse(&content, Mode::Module, "<unknown>")
+        .with_context(|| utils::parse_error_formating(path))?;
 
     let mut missing_docstrings: Vec<MissingDocstring> = vec![];
     if let Some(module) = &module.as_module() {
@@ -184,6 +180,9 @@ mod tests {
         #[case] line_number: usize,
         #[case] expected: bool,
     ) {
-        assert_eq!(expected, ignore_validation(line_number, &input));
+        assert_eq!(
+            expected,
+            utils::ignore_validation(Language::Python, line_number, &input)
+        );
     }
 }
