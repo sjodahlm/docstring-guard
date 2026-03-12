@@ -2,3 +2,8 @@
 pub struct DocumentedStruct {
     name: String,
 }
+
+#[rustfmt::skip]
+pub struct IgnoredStruct { //docstring-guard=ignore
+    name: String,
+}
