@@ -13,19 +13,23 @@ fn main() {
 
     for argv in &args {
         let path = Path::new(argv);
-        if let Some(extension) = path.extension() {
-            let result: Result<Vec<MissingDocstring>, Error> = match extension.to_str() {
-                Some("py") => check_python_file(path),
-                Some("rs") => check_rust_file(path),
-                _ => continue,
-            };
-            match result {
-                Ok(missing_docstrings) => {
-                    docstring_fails.extend(missing_docstrings);
-                }
-                Err(err) => {
-                    errors.push(err);
-                }
+
+        let Some(extension) = path.extension() else {
+            continue;
+        };
+
+        let result = match extension.to_str() {
+            Some("py") => check_python_file(path),
+            Some("rs") => check_rust_file(path),
+            _ => continue,
+        };
+
+        match result {
+            Ok(missing_docstrings) => {
+                docstring_fails.extend(missing_docstrings);
+            }
+            Err(err) => {
+                errors.push(err);
             }
         }
     }
