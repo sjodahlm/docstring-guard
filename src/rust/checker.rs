@@ -15,12 +15,12 @@ struct DocstringVisitor<'a> {
 impl<'ast> Visit<'ast> for DocstringVisitor<'_> {
     fn visit_item_fn(&mut self, i: &'ast ItemFn) {
         if !utils::ignore_validation(
-            Language::Rust,
+            &Language::Rust,
             i.sig.ident.span().start().line,
             self.file_content,
         ) {
             if let Some(missing_docstring) = has_docstring(&self.file_name, i) {
-                self.missing_docstrings.push(missing_docstring)
+                self.missing_docstrings.push(missing_docstring);
             }
         }
         visit::visit_item_fn(self, i);
@@ -28,12 +28,12 @@ impl<'ast> Visit<'ast> for DocstringVisitor<'_> {
 
     fn visit_item_struct(&mut self, i: &'ast ItemStruct) {
         if !utils::ignore_validation(
-            Language::Rust,
+            &Language::Rust,
             i.ident.span().start().line,
             self.file_content,
         ) {
             if let Some(missing_docstring) = has_docstring(&self.file_name, i) {
-                self.missing_docstrings.push(missing_docstring)
+                self.missing_docstrings.push(missing_docstring);
             }
         }
         visit::visit_item_struct(self, i);

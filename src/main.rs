@@ -34,11 +34,11 @@ fn main() {
         }
     }
 
-    for err in errors.iter() {
+    for err in &errors {
         eprintln!("{} - {}", err, err.root_cause());
     }
 
-    for missing_docstring in docstring_fails.iter() {
+    for missing_docstring in &docstring_fails {
         println!(
             "{} {} no docstring in '{}'",
             format!(
