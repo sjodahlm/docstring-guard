@@ -28,7 +28,7 @@ fn remove_whitespace(s: &str) -> String {
     s.chars().filter(|c| !c.is_whitespace()).collect()
 }
 
-pub fn ignore_validation(lang: &Language, line_number: usize, content: &str) -> bool {
+pub fn ignore_validation(lang: Language, line_number: usize, content: &str) -> bool {
     let mut lines = content.lines();
     if let Some(ignore) = lines.nth(line_number - 1) {
         let prefix = match lang {

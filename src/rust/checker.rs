@@ -15,7 +15,7 @@ struct DocstringVisitor<'a> {
 impl<'ast> Visit<'ast> for DocstringVisitor<'_> {
     fn visit_item_fn(&mut self, i: &'ast ItemFn) {
         if !utils::ignore_validation(
-            &Language::Rust,
+            Language::Rust,
             i.sig.ident.span().start().line,
             self.file_content,
         ) {
@@ -28,7 +28,7 @@ impl<'ast> Visit<'ast> for DocstringVisitor<'_> {
 
     fn visit_item_struct(&mut self, i: &'ast ItemStruct) {
         if !utils::ignore_validation(
-            &Language::Rust,
+            Language::Rust,
             i.ident.span().start().line,
             self.file_content,
         ) {

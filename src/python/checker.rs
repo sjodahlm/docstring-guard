@@ -62,7 +62,7 @@ fn check_documentable_for_docstring(
     let id = stmt.name().as_str();
     let line_number = get_line_number(content, range);
 
-    if !is_dunder(id) && !utils::ignore_validation(&Language::Python, line_number, content) {
+    if !is_dunder(id) && !utils::ignore_validation(Language::Python, line_number, content) {
         if let Some(docstring) = stmt.body().first() {
             if !is_docstring(docstring) {
                 let entry = MissingDocstring {
@@ -186,7 +186,7 @@ mod tests {
     ) {
         assert_eq!(
             expected,
-            utils::ignore_validation(&Language::Python, line_number, &input)
+            utils::ignore_validation(Language::Python, line_number, &input)
         );
     }
 }
