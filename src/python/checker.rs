@@ -12,10 +12,7 @@ fn is_docstring(stmt: &Stmt) -> bool {
 }
 
 fn is_dunder(name: &str) -> bool {
-    if name.starts_with("__") && name.ends_with("__") {
-        return true;
-    }
-    false
+    name.starts_with("__") && name.ends_with("__")
 }
 
 fn get_line_number(content: &str, range: TextRange) -> usize {
@@ -150,6 +147,8 @@ mod tests {
     #[case("__init__", true)]
     #[case("test", false)]
     #[case("_test", false)]
+    #[case("_test__", false)]
+    #[case("__test_", false)]
     fn test_is_dunder(#[case] input: String, #[case] expected: bool) {
         assert_eq!(expected, is_dunder(&input))
     }
