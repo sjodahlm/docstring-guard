@@ -8,7 +8,7 @@ use std::path::Path;
 fn is_docstring(stmt: &Stmt) -> bool {
     stmt.as_expr_stmt()
         .and_then(|e| e.value.as_constant_expr())
-        .map_or(false, |c| c.value.is_str())
+        .is_some_and(|c| c.value.is_str())
 }
 
 fn is_dunder(name: &str) -> bool {
